@@ -1,0 +1,13 @@
+[
+	{
+		"id": 2,
+		"title": "papas",
+		"description": "papitas ricas",
+		"code": "dwd224",
+		"price": 2000,
+		"category": "papasd",
+		"stock": 21,
+		"status": true,
+		"thumbnail": null
+	}
+]
