@@ -1,99 +1,145 @@
-import { generateId } from "../utils/collectionHandler.js";
-import { readJsonFile, writeJsonFile } from "../utils/fileHandler.js";
-import paths from '../utils/paths.js';
-import { convertToBool } from "../utils/converter.js";
-import ErrorManager from "./ErrorManager.js";
+
+import mongoose from "mongoose";
+import ProductModel from "../models/product.model.js";
+import mongoDB from "../config/mongoose.config.js";
+import FileSystem from "../utils/fileHandler.js";
+import paths from "../utils/paths.js";
+import { convertToBoolean } from "../utils/converter.js";
+
+import {
+    ERROR_INVALID_ID,
+    ERROR_NOT_FOUND_ID,
+} from "../constants/messages.constant.js";
 
 export default class ProductManager {
-    #jsonFilename;
-    #products;
+    #productModel;
+    #fileSystem;
 
     constructor () {
-        this.#jsonFilename = "products.json"
+        this.#productModel = ProductModel;
+        this.#fileSystem = new FileSystem();
     }
 
-    async #findOneById(id) {
-       this.#products = await this.getAll();
-       const productFound = this.#products.find((item) => item.id === Number(id));
-       if (!productFound){
-        throw new ErrorManager ("Id no encontrado", 404);
-       }
-       return productFound;
-    }
-    async getAll() {
+    getAll = async (paramFilters) => {
         try {
-            this.#products = await readJsonFile(paths.files, this.#jsonFilename);
-            return this.#products
+            const $and = [];
+
+            if (paramFilters?.name) $and.push({ name: { $regex: paramFilters.name, $options: "i" } });
+            if (paramFilters?.category) $and.push({ category: paramFilters.category });
+            if (paramFilters?.availability) $and.push({ availability: convertToBoolean(paramFilters.availability) });
+            const filters = $and.length > 0 ? { $and } : {};
+
+            const sort = {
+                asc: { name: 1 },
+                desc: { name: -1 },
+            };
+
+            const paginationOptions = {
+                limit: paramFilters?.limit ?? 5,
+                page: paramFilters?.page ?? 1,
+                sort: sort[paramFilters?.sort] ?? {},
+                lean: true,
+            };
+
+            const productsFound = await this.#productModel.paginate(filters, paginationOptions);
+            return productsFound;
         } catch (error) {
-            throw new ErrorManager (error.message, error.code);
+            throw new Error(error.message);
         }
-    }
-    async getOneById(id) {
+    };
+
+    getOneById = async (id) => {
         try {
-            const productFound = await this.#findOneById(id);
+            if (!mongoDB.isValidID(id)) {
+                throw new Error(ERROR_INVALID_ID);
+            }
+
+            const productFound = await this.#productModel.findById(id).lean();
+
+            if (!productFound) {
+                throw new Error(ERROR_NOT_FOUND_ID);
+            }
+
             return productFound;
         } catch (error) {
-            throw new ErrorManager (error.message, error.code);
+            throw new Error(error.message);
         }
-    }
-    async insertOne(data, file) {
-        try {
-            const {title, description, code, price, category, stock, status} = data;
+    };
 
-            if (!title || !description || !code || !price || !category || !stock || !status){
-                throw new ErrorManager ("Faltan campos obligatorios", 400);
+    insertOne = async (data, filename) => {
+        try {
+            const productCreated = new ProductModel(data);
+            productCreated.availability = convertToBoolean(data.availability);
+            productCreated.thumbnail = filename ?? null;
+            await productCreated.save();
+
+            return productCreated;
+        } catch (error) {
+            if (filename) await this.#fileSystem.delete(paths.images, filename);
+
+            if (error instanceof mongoose.Error.ValidationError) {
+                error.message = Object.values(error.errors)[0];
             }
-            const product = {
-                id: generateId( await this.getAll()),
-                title,
-                description,
-                code,
-                price: Number(price),
-                category,
-                stock: Number(stock),
-                status: convertToBool(status),
-                thumbnail: file?.filename ?? null,
-            };
 
-            this.#products.push(product);
-            await writeJsonFile(paths.files, this.#jsonFilename, this.#products )
-            return product;
-        } catch (error) {
-            throw new ErrorManager (error.message, error.code);
+            throw new Error(error.message);
         }
-    }
-    async updateOneById(id, data) {
+    };
+
+    updateOneById = async (id, data, filename) => {
         try {
-            const {title, description, code, price, category, stock, status} = data;
-            const productFound = await this.#findOneById(id);
+            if (!mongoDB.isValidID(id)) {
+                throw new Error(ERROR_INVALID_ID);
+            }
 
-            const product = {
-                id: productFound.id,
-                title: title || productFound.title,
-                description: description || productFound.description, 
-                code: code || productFound.code,
-                price: price || productFound.price,
-                category: category || productFound.category,
-                stock: stock ? Number(stock) : productFound.stock,
-                status: status ? convertToBool(status) : productFound.status,
-            };
-            const index = this.#products.findIndex((item) => item.id === Number(id));
-            this.#products[index] = product;
-            await writeJsonFile(paths.files, this.#jsonFilename, this.#products )
+            const productFound = await this.#productModel.findById(id);
+            const currentThumbnail = productFound.thumbnail;
+            const newThumbnail = filename;
 
-            return product;
+            if (!productFound) {
+                throw new Error(ERROR_NOT_FOUND_ID);
+            }
+
+            productFound.name = data.name;
+            productFound.description = data.description;
+            productFound.category = data.category;
+            productFound.availability = convertToBoolean(data.availability);
+            productFound.thumbnail = newThumbnail ?? currentThumbnail;
+            await productFound.save();
+
+            if (filename && newThumbnail != currentThumbnail) {
+                await this.#fileSystem.delete(paths.images, currentThumbnail);
+            }
+
+            return productFound;
         } catch (error) {
-            throw new ErrorManager (error.message, error.code);v
+            if (filename) await this.#fileSystem.delete(paths.images, filename);
+
+            if (error instanceof mongoose.Error.ValidationError) {
+                error.message = Object.values(error.errors)[0];
+            }
+
+            throw new Error(error.message);
         }
-    }async deleteOneById(id) {
+    };
+
+    deleteOneById = async (id) => {
         try {
-            await this.#findOneById(id);
+            if (!mongoDB.isValidID(id)) {
+                throw new Error(ERROR_INVALID_ID);
+            }
 
-            const index = this.#products.findIndex((item) => item.id === Number(id));
-            this.#products.splice(index, 1);
-            await writeJsonFile(paths.files, this.#jsonFilename, this.#products )
+            const productFound = await this.#productModel.findById(id);
+
+            if (!productFound) {
+                throw new Error(ERROR_NOT_FOUND_ID);
+            }
+
+            await this.#productModel.findByIdAndDelete(id);
+            await this.#fileSystem.delete(paths.images, productFound.thumbnail);
+
+            return productFound;
         } catch (error) {
-            throw new ErrorManager (error.message, error.code);
+            throw new Error(error.message);
         }
-    }
+    };
 }

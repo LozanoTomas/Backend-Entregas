@@ -1,33 +1,59 @@
 import { Server } from "socket.io";
 import ProductManager from "../managers/ProductManager.js";
+import FileSystem from "../utils/fileHandler.js";
+import paths from "../utils/paths.js";
+import { generateNameForFile } from "../utils/random.js";
 
 const productManager = new ProductManager();
+const fileSystem = new FileSystem();
+let serverSocket = null;
 
-// Configura el servidor Socket.IO
-export const config = (httpServer) => {
-    // Crea una nueva instancia del servidor Socket.IO
-    const socketServer = new Server(httpServer);
+const config = (serverHTTP) => {
+    serverSocket = new Server(
+        serverHTTP,
+        {
+            maxHttpBufferSize: 5e6, // Permitir archivos hasta 5MB (por defecto es 1MB)
+        },
+    );
 
-    // Escucha el evento de conexión de un nuevo cliente
-    socketServer.on("connection", async (socket) => {
-     socketServer.emit("products-list", {products: await productManager.getAll() });
-     
-     socket.on("insert-product", async (data) => {
-        try {
-            await productManager.insertOne(data);
-            socketServer.emit("products-list", {products: await productManager.getAll() });
-        } catch (error) {
-            socketServer.emit("error-message", {message:error.message});
+    serverSocket.on("connection", async (socket) => {
+        const response = await productManager.getAll({ limit: 100 });
+        console.log("Socket connected");
+
+        // Envía la lista de productes al conectarse
+        serverSocket.emit("products-list", response);
+
+        socket.on("insert-product", async (data) => {
+            if (data?.file) {
+                const filename = generateNameForFile(data.file.name);
+                await fileSystem.write(paths.images, filename, data.file.buffer);
+
+                await productManager.insertOne(data, filename);
+                const response = await productManager.getAll({ limit: 100 });
+
+                //Envía la lista de productes actualizada después de insertar
+                serverSocket.emit("products-list", response);
             }
         });
+
         socket.on("delete-product", async (data) => {
-            try {
-                await productManager.deleteOneById(data.id);
-                socketServer.emit("products-list", {products: await productManager.getAll() });
-            } catch (error) {
-                socketServer.emit("error-message", {message:error.message});
-                }
-            });
-        
+            await productManager.deleteOneById(data.id);
+            const response = await productManager.getAll({ limit: 100 });
+
+            // Envía la lista de productes actualizada después de eliminar
+            serverSocket.emit("products-list", response);
+        });
     });
+};
+
+const updateProductsList = async () => {
+    const response = await productManager.getAll({ limit: 100 });
+
+    // Envía la lista de productes actualizada
+    serverSocket.emit("products-list", { response });
+};
+
+export default {
+    config,
+    updateProductsList,
 };

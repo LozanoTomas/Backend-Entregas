@@ -1,14 +1,12 @@
 import handlebars from "express-handlebars";
 import paths from "../utils/paths.js";
 
-// Configura el servidor para usar Handlebars como motor de plantillas
-export const config = (app) => {
-    // Registra el motor de plantillas Handlebars
-    app.engine("handlebars", handlebars.engine());
+const config = (server) => {
+    server.engine("handlebars", handlebars.engine());
+    server.set("views", paths.views);
+    server.set("view engine", "handlebars");
+};
 
-    // Establece la carpeta donde se encuentran las vistas
-    app.set("views", paths.views);
-
-    // Define Handlebars como el motor de vistas por defecto
-    app.set("view engine", "handlebars");
+export default {
+    config,
 };

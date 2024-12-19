@@ -1,0 +1,88 @@
+<header>
+    <h1>INICIO</h1>
+</header>
+
+<main>
+    <section class="container-products-table">
+        <h3>Productos</h3>
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Controles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each data.docs}}
+                    <tr>
+                        <td>{{this.id}}</td>
+                        <td>{{this.name}}</td>
+                        <td>
+                            <a href="/products/{{this.id}}/cart/{{this.currentCartId}}"><button
+                                    title="Ver más...">👁</button></a>
+                            <button onclick="addProduct('{{this.currentCartId}}', '{{this.id}}')"
+                                title="Agregar en el carrito">✅</button>
+                            <button onclick="removeProduct('{{this.currentCartId}}', '{{this.id}}')"
+                                title="Quitar del carrito">❎</button>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            <div class="container-products-table__pagination">
+                <div>
+                    {{#if data.prevPage}}
+                    <a href="/products?page={{data.prevPage}}{{data.sort}}"><button>Anterior</button></a>
+                    {{/if}}
+
+                    {{#if data.hasNextPage}}
+                    <a href="/products?page={{data.nextPage}}{{data.sort}}"><button>Siguiente</button></a>
+                    {{/if}}
+
+                    <a href="/products?page={{data.page}}&sort=asc"><button>⬇</button></a>
+                    <a href="/products?page={{data.page}}&sort=desc"><button>⬆</button></a>
+                    <a href="/products?page={{data.page}}"><button>⬌</button></a>
+                </div>
+
+                <span>Página {{data.page}} de {{data.totalPages}} ({{data.totalDocs}} documentos)</span>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h3>Formulario de Productos</h3>
+        <form id="products-form">
+            <input type="text" name="name" placeholder="Nombre del producto">
+            <textarea name="description" placeholder="Descripción del producto" rows="5"></textarea>
+            <select name="category">
+                <option value="LIQUIDO">LIQUIDO</option>
+                <option value="SOLIDO">SOLIDO</option>
+            </select>
+            <span><input type="checkbox" name="availability">Disponibilidad del producto</span>
+            <input type="file" name="file" accept=".png,.jpg">
+
+            <input type="submit" value="Guardar" style="width: 100%">
+        </form>
+    </section>
+
+    <section class="container-product-delete">
+        <h3>Eliminación de Productos</h3>
+        <div>
+            <input type="text" id="input-product-id" placeholder="ID del Producto">
+            <button id="btn-delete-product">Eliminar</button>
+        </div>
+    </section>
+
+    <section class="container-cart-link">
+        <h3>Carrito</h3>
+        <div>
+            <a href="/carts/{{data.currentCartId}}" title="Ver detalles del carrito..."><span>📒</span></a>
+            <button onclick="removeAllProducts('{{data.currentCartId}}')"
+                title="Eliminar todos los productos del carrito">⛔</button>
+        </div>
+    </section>
+</main>
+
+<script src="/public/js/products_with_http.js"></script>
