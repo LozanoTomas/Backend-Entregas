@@ -1,0 +1,92 @@
+.realtime-products-list-style {
+    list-style-type: none;
+    padding: 10px 20px; 
+    margin: 20px 20px; 
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    max-width: 300px;
+    background-color: #f9f9f9;
+}
+
+.realtime-products-list-style li {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.realtime-products-list-style li:last-child {
+    border-bottom: none;
+}
+
+.products-style {
+    display: flex;
+    flex-direction: column; 
+    gap: 15px; 
+    max-width: 300px;
+    margin: 20px 20px; 
+    align-items: stretch; 
+}
+
+.products-style input {
+    padding: 8px;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.products-style input[type="submit"] {
+    background-color: blue;
+    color: white;
+    border: none;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.products-style input[type="submit"]:hover {
+    background-color: darkblue;
+}
+
+.delete-product-style {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; 
+    margin: 20px 20px; 
+}
+
+.delete-product-input-style {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 100%; 
+}
+
+.delete-product-style #btn-delete-product {
+    padding: 8px 16px;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    align-self: flex-start;
+}
+
+.delete-product-style #btn-delete-product:hover {
+    background-color: #e60000;
+}
+
+.error-message-style {
+    color: #ff4d4d;
+    font-weight: bold;
+    font-size: 24px;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 20px; 
+    max-width: 300px;
+}
+
+.realtime-title, .realtime-instructions {
+    margin: 0 20px; 
+    font-size: 18px;
+}
