@@ -1,51 +1,46 @@
 <header>
-    <h1>Pagina de Inicio</h1>
+    <a class="site-title">SuperMarket</a>
+    <a href="/cart" class="cart-icon">
+        <span class="iconify" data-icon="mdi:cart" data-inline="false"></span>
+        <span id="cart-count" class="cart-count">0</span>
+    </a>
 </header>
 
 <main>
     <section>
-        <h3>Lista de productos</h3>
-        
-        <div>
-            <table id="products-table" class="products-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th id="sort-name">Nombre Producto
-                            <!-- Buttons for sorting by name -->
-                            <button class="sort-btn" data-sort="asc">🔼</button>
-                            <button class="sort-btn" data-sort="desc">🔽</button>
-                        </th>
-                        <th>Precio</th>
-                        <th id="sort-availability">Disponibilidad                        
-                        </th>
-                        <th>Cantidad</th> 
-                        <th>Controles</th>
-                    </tr>
-                </thead>
-                <tbody id="products-list" class="products-list">
-                    <!-- Dynamic content populated by JavaScript -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination Section with Current Page Display -->
-        <div class="pagination">
-            <button id="first-page" class="page-btn">Primera</button>
-            <button id="previous-page" class="page-btn">Anterior</button>
-
-            <!-- Current Page Display -->
-            <span id="current-page" class="page-info">Página 1</span>
-
-            <button id="next-page" class="page-btn">Siguiente</button>
-            <button id="last-page" class="page-btn">Última</button>
-        </div>
-        
-        <div class="action-buttons">
-            <button id="refresh-btn" class="action-btn">Refrescar</button>
-            <button id="goto-cart-btn" class="action-btn">Ir al Carrito</button>
+        <div class="products">
+            <div class="products__controls">
+                <select id="sort-select">
+                    <option value="">Ordenar por título</option>
+                    <option value="asc">Ascendente</option>
+                    <option value="desc">Descendente</option>
+                </select>
+                <select id="category-select">
+                    <option value="">Todas las categorías</option>
+                    <!-- Las categorías se cargarán dinámicamente aquí -->
+                </select>
+                <select id="status-select">
+                    <option value="">Todos los productos</option>
+                    <option value="true">Activos</option>
+                    <option value="false">Inactivos</option>
+                </select>
+                <select id="price-order-select">
+                    <option value="">Ordenar por precio</option>
+                    <option value="asc">Precio ascendente</option>
+                    <option value="desc">Precio descendente</option>
+                </select>
+            </div>
+            <div class="products__grid" id="products-grid">
+                <!-- productos  -->
+            </div>
+            <div class="products__pagination">
+                <button id="btn-prev-page" disabled>Anterior</button>
+                <span id="current-page">Página 1</span>
+                <button id="btn-next-page">Siguiente</button>
+            </div>
         </div>
     </section>
 </main>
-
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 <script src="/api/public/js/products.js"></script>

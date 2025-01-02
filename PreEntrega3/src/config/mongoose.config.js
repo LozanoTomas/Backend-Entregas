@@ -1,24 +1,15 @@
 import { connect, Types } from "mongoose";
 
-export const connectDB = () => {
-    const URI = "mongodb+srv://lozanotdlc:4321@cluster0.1cyyd.mongodb.net/prueba";
+export const connectDB = async () => {
+    const URL = "mongodb+srv://lozanotdlc:4321@cluster0.1cyyd.mongodb.net/prueba";
 
-    const options = {
-        useNewUrlParser: true, // Utiliza el nuevo motor de análisis de URL de MongoDB.
-        useUnifiedTopology: true, // Deshabilitar los métodos obsoletos.
-        dbName: "restaurant", // Nombre de la base de datos.
-    };
-
-    connect(URI, options)
-        .then(() => console.log("Conectado a MongoDB"))
-        .catch((err) => console.error("Error al conectar con MongoDB", err));
+    try {
+        await connect(URL);
+        console.log("Conectado a MongoDB");
+    } catch (error) {
+        console.log("Error al conectar con MongoDB", error.message);
+    }
 };
-
 export const isValidID = (id) => {
     return Types.ObjectId.isValid(id);
-};
-
-export default {
-    connectDB,
-    isValidID,
 };

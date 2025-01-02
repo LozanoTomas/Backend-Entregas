@@ -1,81 +1,94 @@
-const cartList = document.getElementById("cart-list");
-const btnEmptyCart = document.getElementById("empty-cart-btn");
-const btnGoBack = document.getElementById("go-back-btn");
+function updateCartCount() {
+    const cartCountElement = document.getElementById('cart-count');
+    let totalQuantity = 0;
 
-const cartId = "675b738009aabebdea1e84a3";
+    document.querySelectorAll('.quantity').forEach(quantityElement => {
+        totalQuantity += parseInt(quantityElement.textContent);
+    });
 
-const loadCart = async () => {
+    cartCountElement.textContent = totalQuantity;
+}
+
+async function updateQuantity(cartId, productId, currentQuantity, change) {
     try {
-        const response = await fetch(`/api/carts/${cartId}`, { method: "GET" });
-        const data = await response.json();
-
-        if (!data || !data.payload) {
-            cartList.innerHTML = "<tr><td colspan='4'>No hay productos en el carrito</td></tr>";
+        const newQuantity = currentQuantity + change;
+        if (newQuantity < 1) {
             return;
         }
 
-        const cartItems = data.payload.products;
+        const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ quantity: newQuantity })
+        });
 
-        cartList.innerHTML = cartItems.map((item) =>{
-            const { product, quantity } = item;
-            const { _id, title, price } = product;
-
-            return `
-            <tr>
-                <td>${_id}</td>
-                <td>${title}</td>
-                <td>$${price}</td>
-                <td>${quantity}</td>
-                <td class="controls-btns">
-                    <button class="remove-from-cart-btn" data-id="${_id}">Eliminar</button>
-                </td>
-            </tr>
-        `;}).join("");
-    } catch (error) {
-        throw new Error("Error loading cart:", error);
-    }
-};
-
-document.addEventListener("click", async (event) => {
-    if (event.target.classList.contains("remove-from-cart-btn")) {
-        const productId = event.target.getAttribute("data-id");
-
-        try {
-            const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                },
-            });
-
-            if (response.ok) {
-                loadCart();
-            } else {
-                throw new Error("Failed to remove product from cart");
-            }
-        } catch (error) {
-            throw new Error("Error removing product from cart:", error);
+        if (!response.ok) {
+            throw new Error('Error al actualizar la cantidad del producto');
         }
-    }
-});
 
-btnEmptyCart.addEventListener("click", async () => {
-    try {
-        const response = await fetch(`/api/carts/${cartId}/products`, { method: "DELETE" });
+        const data = await response.json();
 
-        if (response.ok) {
-            loadCart();
+        if (data.status === 'success') {
+            document.getElementById(`quantity-${cartId}-${productId}`).textContent = newQuantity;
         } else {
-            throw new Error("Failed to empty the cart");
+            throw new Error(data.message || 'Error al actualizar la cantidad del producto');
         }
     } catch (error) {
-        throw new Error("Error emptying the cart:", error);
+        console.error('Error:', error);
+        alert('Error al eliminar el carrito. Intente nuevamente..');
     }
-});
+}
 
-btnGoBack.addEventListener("click", () => {
-    window.location.href = "/";
-});
+async function removeProduct(cartId, productId) {
+    try {
+        const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+            method: 'DELETE'
+        });
 
-document.addEventListener("DOMContentLoaded", loadCart);
+        if (!response.ok) {
+            throw new Error('Error al eliminar el producto del carrito');
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            throw new Error(data.message || 'Error al eliminar el producto del carrito');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar el carrito. Intente nuevamente.');
+    }
+}
+
+async function emptyCart(cartId) {
+    const userConfirmed = confirm("¿Estás seguro de que deseas vaciar el carrito?");
+    if (!userConfirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/carts/${cartId}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al eliminar el carrito');
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            localStorage.removeItem('cartId');
+            location.reload();
+        } else {
+            throw new Error(data.message || 'Error al eliminar el carrito');
+        }
+    } catch (error) {
+        console.error('Error al eliminar el carrito:', error);
+        alert('Error al eliminar el carrito. Intente nuevamente.');
+    }
+}
